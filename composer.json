@@ -1,0 +1,41 @@
+{
+    "name": "vitordesousa/laravel-authentik-web-guard",
+    "description": "Simple Authentik Guard to Laravel Web Routes (Adapted of Laravel Keycloak Web Guard (Vizir))",
+    "homepage": "https://github.com/vitordesousa/laravel-authentik-web-guard",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "authentik",
+        "jwt",
+        "authentication"
+    ],
+    "authors": [
+        {
+            "name": "Vitor de Sousa da Silva",
+            "email": "vitordessilva@gmail.com"
+        },
+        {
+            "name": "Mário Valney",
+            "email": "mariovalney@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "guzzlehttp/guzzle": "^6.5|^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "VitorDeSousa\\AuthentikWebGuard\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "VitorDeSousa\\AuthentikWebGuard\\AuthentikWebGuardServiceProvider"
+            ],
+            "aliases": {
+                "AuthentikWeb": "VitorDeSousa\\AuthentikWebGuard\\Facades\\AuthentikWeb"
+            }
+        }
+    }
+}
