@@ -14,6 +14,11 @@ return [
     'client_id' => env('AUTHENTIK_CLIENT_ID', null),
 
     /**
+     * Authentik Client Slug
+     */
+    'client_slug' => env('AUTHENTIK_CLIENT_SLUG', null),
+
+    /**
      * Authentik Client Secret
      */
     'client_secret' => env('AUTHENTIK_CLIENT_SECRET', null),
