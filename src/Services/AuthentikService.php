@@ -31,14 +31,19 @@ class AuthentikService
      */
     protected $baseUrl;
 
-
-
     /**
      * Authentik Client ID
      *
      * @var string
      */
     protected $clientId;
+
+    /**
+     * Authentik Application Slug (optional, only for multi-application instances)
+     *
+     * @var string
+     */
+    protected $clientSlug;
 
     /**
      * Authentik Client Secret
@@ -104,27 +109,31 @@ class AuthentikService
      */
     public function __construct(ClientInterface $client)
     {
-        if (is_null($this->baseUrl)) {
+        if (empty($this->baseUrl)) {
             $this->baseUrl = trim(Config::get('authentik-web.base_url'), '/');
         }
 
-        if (is_null($this->clientId)) {
+        if (empty($this->clientId)) {
             $this->clientId = Config::get('authentik-web.client_id');
         }
 
-        if (is_null($this->clientSecret)) {
+        if (empty($this->clientSlug)) {
+            $this->clientSlug = Config::get('authentik-web.client_slug');
+        }
+
+        if (empty($this->clientSecret)) {
             $this->clientSecret = Config::get('authentik-web.client_secret');
         }
 
-        if (is_null($this->cacheOpenid)) {
+        if (empty($this->cacheOpenid)) {
             $this->cacheOpenid = Config::get('authentik-web.cache_openid', false);
         }
 
-        if (is_null($this->callbackUrl)) {
+        if (empty($this->callbackUrl)) {
             $this->callbackUrl = route('authentik.callback');
         }
 
-        if (is_null($this->redirectLogout)) {
+        if (empty($this->redirectLogout)) {
             $this->redirectLogout = Config::get('authentik-web.redirect_logout');
         }
 
@@ -141,7 +150,7 @@ class AuthentikService
      *
      * @return string
      */
-    public function getLoginUrl()
+    public function getLoginUrl(): string
     {
         $url = $this->getOpenIdValue('authorization_endpoint');
         $params = [
@@ -160,7 +169,7 @@ class AuthentikService
      *
      * @return string
      */
-    public function getLogoutUrl()
+    public function getLogoutUrl(): string
     {
         $url = $this->getOpenIdValue('end_session_endpoint');
 
@@ -171,8 +180,10 @@ class AuthentikService
         $params = [
             'client_id' => $this->getClientId()
         ];
+
         $token = $this->retrieveToken();
-        if (! empty($token['id_token'])) {
+
+        if (!empty($token['id_token'])) {
             $params['post_logout_redirect_uri'] = $this->redirectLogout;
             $params['id_token_hint'] = $token['id_token'];
         }
@@ -184,10 +195,10 @@ class AuthentikService
     /**
      * Get access token from Code
      *
-     * @param  string $code
+     * @param string $code
      * @return array
      */
-    public function getAccessToken($code)
+    public function getAccessToken(string $code): array
     {
         $url = $this->getOpenIdValue('token_endpoint');
         $params = [
@@ -197,7 +208,7 @@ class AuthentikService
             'redirect_uri' => $this->callbackUrl,
         ];
 
-        if (! empty($this->clientSecret)) {
+        if (!empty($this->clientSecret)) {
             $params['client_secret'] = $this->clientSecret;
         }
 
@@ -220,10 +231,10 @@ class AuthentikService
     /**
      * Refresh access token
      *
-     * @param  string $refreshToken
+     * @param array $credentials
      * @return array
      */
-    public function refreshAccessToken($credentials)
+    public function refreshAccessToken(array $credentials): array
     {
         if (empty($credentials['refresh_token'])) {
             return [];
@@ -237,7 +248,7 @@ class AuthentikService
             'redirect_uri' => $this->callbackUrl,
         ];
 
-        if (! empty($this->clientSecret)) {
+        if (!empty($this->clientSecret)) {
             $params['client_secret'] = $this->clientSecret;
         }
 
@@ -260,10 +271,10 @@ class AuthentikService
     /**
      * Invalidate Refresh
      *
-     * @param  string $refreshToken
+     * @param string $refreshToken
      * @return bool
      */
-    public function invalidateRefreshToken($refreshToken)
+    public function invalidateRefreshToken(string $refreshToken): bool
     {
         $url = $this->getOpenIdValue('end_session_endpoint');
         $params = [
@@ -271,7 +282,7 @@ class AuthentikService
             'refresh_token' => $refreshToken,
         ];
 
-        if (! empty($this->clientSecret)) {
+        if (!empty($this->clientSecret)) {
             $params['client_secret'] = $this->clientSecret;
         }
 
@@ -287,11 +298,11 @@ class AuthentikService
 
     /**
      * Get access token from Code
-     * @param  array $credentials
-     * @throws Exception
+     * @param array $credentials
      * @return array
+     * @throws Exception
      */
-    public function getUserProfile($credentials)
+    public function getUserProfile(array $credentials): array
     {
         $credentials = $this->refreshTokenIfNeeded($credentials);
 
@@ -343,7 +354,7 @@ class AuthentikService
      *
      * @return array|null
      */
-    public function retrieveToken()
+    public function retrieveToken(): ?array
     {
         return session()->get(self::AUTHENTIK_SESSION);
     }
@@ -353,7 +364,7 @@ class AuthentikService
      *
      * @return void
      */
-    public function saveToken($credentials)
+    public function saveToken($credentials): void
     {
         session()->put(self::AUTHENTIK_SESSION, $credentials);
         session()->save();
@@ -364,7 +375,7 @@ class AuthentikService
      *
      * @return void
      */
-    public function forgetToken()
+    public function forgetToken(): void
     {
         session()->forget(self::AUTHENTIK_SESSION);
         session()->save();
@@ -373,12 +384,12 @@ class AuthentikService
     /**
      * Validate State from Session
      *
-     * @return void
+     * @return bool
      */
-    public function validateState($state)
+    public function validateState($state): bool
     {
         $challenge = session()->get(self::AUTHENTIK_SESSION_STATE);
-        return (! empty($state) && ! empty($challenge) && $challenge === $state);
+        return (!empty($state) && !empty($challenge) && $challenge === $state);
     }
 
     /**
@@ -386,7 +397,7 @@ class AuthentikService
      *
      * @return void
      */
-    public function saveState()
+    public function saveState(): void
     {
         session()->put(self::AUTHENTIK_SESSION_STATE, $this->state);
         session()->save();
@@ -397,7 +408,7 @@ class AuthentikService
      *
      * @return void
      */
-    public function forgetState()
+    public function forgetState(): void
     {
         session()->forget(self::AUTHENTIK_SESSION_STATE);
         session()->save();
@@ -406,18 +417,18 @@ class AuthentikService
     /**
      * Build a URL with params
      *
-     * @param  string $url
-     * @param  array $params
+     * @param string $url
+     * @param array $params
      * @return string
      */
-    public function buildUrl($url, $params)
+    public function buildUrl(string $url, array $params): string
     {
         $parsedUrl = parse_url($url);
         if (empty($parsedUrl['host'])) {
             return trim($url, '?') . '?' . http_build_query($params);
         }
 
-        if (! empty($parsedUrl['port'])) {
+        if (!empty($parsedUrl['port'])) {
             $parsedUrl['host'] .= ':' . $parsedUrl['port'];
         }
 
@@ -427,7 +438,7 @@ class AuthentikService
         $url = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . $parsedUrl['path'];
         $query = [];
 
-        if (! empty($parsedUrl['query'])) {
+        if (!empty($parsedUrl['query'])) {
             $parsedUrl['query'] = explode('&', $parsedUrl['query']);
 
             foreach ($parsedUrl['query'] as $value) {
@@ -454,9 +465,14 @@ class AuthentikService
      *
      * @return string
      */
-    protected function getClientId()
+    protected function getClientId(): string
     {
         return $this->clientId;
+    }
+
+    protected function getClientSlug(): string
+    {
+        return $this->clientSlug;
     }
 
     /**
@@ -464,7 +480,7 @@ class AuthentikService
      *
      * @return string
      */
-    protected function getState()
+    protected function getState(): string
     {
         return $this->state;
     }
@@ -472,12 +488,13 @@ class AuthentikService
     /**
      * Return a value from the Open ID Configuration
      *
-     * @param  string $key
+     * @param string $key
      * @return string
+     * @throws Exception
      */
-    protected function getOpenIdValue($key)
+    protected function getOpenIdValue(string $key): string
     {
-        if (! $this->openid) {
+        if (!$this->openid) {
             $this->openid = $this->getOpenIdConfiguration();
         }
 
@@ -488,8 +505,9 @@ class AuthentikService
      * Retrieve OpenId Endpoints
      *
      * @return array
+     * @throws Exception
      */
-    protected function getOpenIdConfiguration()
+    protected function getOpenIdConfiguration(): array
     {
         $cacheKey = 'authentik_web_guard_openid-' . md5($this->baseUrl);
 
@@ -497,13 +515,13 @@ class AuthentikService
         if ($this->cacheOpenid) {
             $configuration = Cache::get($cacheKey, []);
 
-            if (! empty($configuration)) {
+            if (!empty($configuration)) {
                 return $configuration;
             }
         }
-
+        // /application/o/movimento-csm/.well-known/openid-configuration
         // Request if cache empty or not using
-        $url = $this->baseUrl . '/.well-known/openid-configuration';
+        $url = "{$this->baseUrl}/application/o/{$this->clientSlug}/.well-known/openid-configuration";
 
         $configuration = [];
 
@@ -531,17 +549,17 @@ class AuthentikService
     /**
      * Check we need to refresh token and refresh if needed
      *
-     * @param  array $credentials
+     * @param array $credentials
      * @return array
      */
-    protected function refreshTokenIfNeeded($credentials)
+    protected function refreshTokenIfNeeded(array $credentials): array
     {
-        if (! is_array($credentials) || empty($credentials['access_token']) || empty($credentials['refresh_token'])) {
+        if (empty($credentials['access_token']) || empty($credentials['refresh_token'])) {
             return $credentials;
         }
 
         $token = new AuthentikAccessToken($credentials);
-        if (! $token->hasExpired()) {
+        if (!$token->hasExpired()) {
             return $credentials;
         }
 
@@ -553,19 +571,20 @@ class AuthentikService
         }
 
         $this->saveToken($credentials);
+
         return $credentials;
     }
 
     /**
      * Log a GuzzleException
      *
-     * @param  GuzzleException $e
+     * @param GuzzleException $e
      * @return void
      */
-    protected function logException(GuzzleException $e)
+    protected function logException(GuzzleException $e): void
     {
         // Guzzle 7
-        if (! method_exists($e, 'getResponse') || empty($e->getResponse())) {
+        if (!method_exists($e, 'getResponse') || empty($e->getResponse())) {
             Log::error('[Authentik Service] ' . $e->getMessage());
             return;
         }
@@ -582,8 +601,9 @@ class AuthentikService
      * Return a random state parameter for authorization
      *
      * @return string
+     * @throws Exception
      */
-    protected function generateRandomState()
+    protected function generateRandomState(): string
     {
         return bin2hex(random_bytes(16));
     }
