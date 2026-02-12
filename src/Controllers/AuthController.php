@@ -1,14 +1,14 @@
 <?php
 
-namespace Vizir\AuthentikWebGuard\Controllers;
+namespace VitorDeSousa\AuthentikWebGuard\Controllers;
 
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Vizir\AuthentikWebGuard\Exceptions\AuthentikCallbackException;
-use Vizir\AuthentikWebGuard\Facades\AuthentikWeb;
+use VitorDeSousa\AuthentikWebGuard\Exceptions\AuthentikCallbackException;
+use VitorDeSousa\AuthentikWebGuard\Facades\AuthentikWeb;
 
 class AuthController extends Controller
 {
